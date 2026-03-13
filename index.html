@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Idols Park — Cronograma de Projeto</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-page:       #F7F7F5;
+    --bg-primary:    #FFFFFF;
+    --bg-secondary:  #F1F0EC;
+    --text-primary:  #1C1C1A;
+    --text-secondary:#6B6B67;
+    --text-tertiary: #A0A09C;
+    --border-light:  rgba(0,0,0,0.08);
+    --border-med:    rgba(0,0,0,0.14);
+    --radius-md:     8px;
+    --radius-lg:     12px;
+    --shadow-sm:     0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  }
+  body {
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    color: var(--text-primary);
+    background: var(--bg-page);
+    min-height: 100vh;
+    padding: 24px 20px 48px;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .page-title { font-size: 22px; font-weight: 600; letter-spacing: -0.4px; }
+  .page-sub   { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .version-tag {
+    font-size: 11px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border-light);
+  }
+
+  /* ── Stats ── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .stat {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+  .stat-n { font-size: 24px; font-weight: 600; }
+  .stat-l { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .toolbar label { font-size: 12px; color: var(--text-secondary); }
+  .toolbar select {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-med);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+    outline: none;
+  }
+  .toolbar select:focus { border-color: #378ADD; }
+  .legend {
+    margin-left: auto;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-secondary); }
+  .leg-dot  { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* ── Gantt Wrapper ── */
+  .gantt-wrap {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ── Gantt Header ── */
+  .gantt-header {
+    display: flex;
+    border-bottom: 1px solid var(--border-med);
+    background: var(--bg-secondary);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .col-info {
+    width: 350px;
+    min-width: 350px;
+    padding: 8px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-right: 1px solid var(--border-med);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  .col-timeline { flex: 1; overflow: hidden; position: relative; }
+  .month-labels { display: flex; height: 28px; }
+  .month-block  {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-right: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: capitalize;
+  }
+  .week-labels { display: flex; height: 20px; border-top: 1px solid var(--border-light); }
+  .week-cell   {
+    flex: 1;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-tertiary);
+    border-right: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Gantt Body ── */
+  .gantt-body { overflow-y: auto; max-height: 600px; }
+
+  .group-row {
+    display: flex;
+    border-bottom: 1px solid var(--border-light);
+    cursor: pointer;
+    user-select: none;
+    position: sticky;
+    top: 48px;
+    z-index: 5;
+  }
+  .group-row .col-info {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    padding: 9px 14px;
+    color: inherit;
+  }
+  .group-arrow { font-size: 11px; transition: transform 0.18s; display: inline-block; }
+  .group-bar-area { flex: 1; position: relative; height: 38px; display: flex; align-items: center; }
+
+  .task-row {
+    display: flex;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-primary);
+    transition: background 0.12s;
+  }
+  .task-row:hover { background: #F9F8F6; }
+  .task-row:last-child { border-bottom: none; }
+
+  .task-info {
+    width: 350px;
+    min-width: 350px;
+    padding: 8px 14px 8px 28px;
+    border-right: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .task-name { flex: 1; font-size: 12px; line-height: 1.35; }
+  .resp-tag  { font-size: 10px; color: var(--text-tertiary); white-space: nowrap; }
+
+  .badge {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .b-done  { background: #EAF3DE; color: #3B6D11; }
+  .b-wip   { background: #E6F1FB; color: #185FA5; }
+  .b-todo  { background: #F1EFE8; color: #5F5E5A; }
+  .b-block { background: #FAECE7; color: #993C1D; }
+
+  /* ── Bar area ── */
+  .task-bar-area {
+    flex: 1;
+    position: relative;
+    height: 36px;
+    display: flex;
+    align-items: center;
+  }
+  .grid-lines { position: absolute; inset: 0; display: flex; pointer-events: none; }
+  .grid-line  { flex: 1; border-right: 1px solid var(--border-light); }
+  .today-line {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: #E24B4A;
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .bar {
+    position: absolute;
+    height: 16px;
+    border-radius: 3px;
+    top: 10px;
+    min-width: 4px;
+    cursor: pointer;
+    transition: filter 0.12s;
+  }
+  .bar:hover { filter: brightness(0.85); }
+  .bar-done  { background: #639922; }
+  .bar-wip   { background: #378ADD; }
+  .bar-todo  { background: #C0BFB8; }
+  .bar-block { background: #D85A30; }
+  .milestone-diamond {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    transform: rotate(45deg);
+    top: 12px;
+    z-index: 3;
+    cursor: pointer;
+  }
+  .group-phase-bar {
+    position: absolute;
+    height: 8px;
+    border-radius: 2px;
+    top: 15px;
+    opacity: 0.4;
+  }
+
+  /* ── Tooltip ── */
+  #tooltip {
+    position: fixed;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-med);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    max-width: 240px;
+    line-height: 1.6;
+    display: none;
+  }
+  #tooltip strong { font-weight: 600; display: block; margin-bottom: 4px; }
+
+  .empty-msg {
+    padding: 32px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  /* ── Edit Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal {
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    padding: 24px 28px;
+    width: 420px;
+    max-width: 95vw;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  }
+  .modal h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+  .modal label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; margin-top: 12px; }
+  .modal input, .modal select {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--border-med);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    outline: none;
+  }
+  .modal input:focus, .modal select:focus { border-color: #378ADD; }
+  .modal-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+  .btn {
+    padding: 7px 16px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border-med);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+  .btn-primary { background: #1C1C1A; color: #fff; border-color: #1C1C1A; }
+  .btn-danger  { background: #FAECE7; color: #993C1D; border-color: #F0997B; }
+  .btn:hover   { filter: brightness(0.92); }
+
+  /* ── Add Task Button ── */
+  .add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px dashed var(--border-med);
+    background: transparent;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    transition: all 0.12s;
+  }
+  .add-btn:hover { background: var(--bg-primary); color: var(--text-primary); border-style: solid; }
+
+  @media (max-width: 700px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .col-info { width: 200px; min-width: 200px; }
+    .task-info { width: 200px; min-width: 200px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Idols Park</div>
+    <div class="page-sub">Cronograma de Projeto · Mar – Set 2025</div>
+  </div>
+  <span class="version-tag" id="versionTag">v1.0</span>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="toolbar">
+  <label>Fase:</label>
+  <select id="filterPhase">
+    <option value="all">Todas</option>
+    <option value="PLAY">PLAY</option>
+    <option value="ICON">ICON</option>
+    <option value="MEDIA">MEDIA</option>
+    <option value="GOVERNANÇA">GOVERNANÇA</option>
+    <option value="GO LIVE">GO LIVE</option>
+  </select>
+  <label>Status:</label>
+  <select id="filterStatus">
+    <option value="all">Todos</option>
+    <option value="done">Concluído</option>
+    <option value="wip">Em andamento</option>
+    <option value="todo">A fazer</option>
+    <option value="block">Bloqueado</option>
+  </select>
+  <label>Resp.:</label>
+  <select id="filterResp">
+    <option value="all">Todos</option>
+    <option value="Boreal">Boreal</option>
+    <option value="RBS">RBS</option>
+    <option value="Ambos">Ambos</option>
+  </select>
+  <div class="legend">
+    <div class="leg-item"><div class="leg-dot" style="background:#639922"></div>Concluído</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#378ADD"></div>Em andamento</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#C0BFB8"></div>A fazer</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#D85A30"></div>Bloqueado</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#E24B4A;border-radius:0"></div>Hoje</div>
+  </div>
+</div>
+
+<div class="gantt-wrap">
+  <div class="gantt-header">
+    <div class="col-info">Atividade / Responsável</div>
+    <div class="col-timeline" id="headerTimeline"></div>
+  </div>
+  <div class="gantt-body" id="ganttBody"></div>
+</div>
+<button class="add-btn" id="addTaskBtn">+ Nova tarefa</button>
+
+<div id="tooltip"></div>
+<div id="modalOverlay" style="display:none"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// DADOS DO PROJETO — edite aqui para adicionar/alterar tarefas
+// ════════════════════════════════════════════════════════════
+let DATA = [
+  // GOVERNANÇA
+  {phase:"GOVERNANÇA", group:true,  name:"Governança & Base",                        start:"2025-03-03", end:"2025-04-11", resp:"Ambos"},
+  {phase:"GOVERNANÇA",              name:"Registrar marca Idols Park",                start:"2025-03-03", end:"2025-03-14", status:"wip",  resp:"Boreal"},
+  {phase:"GOVERNANÇA",              name:"Captação de investimento",                  start:"2025-03-03", end:"2025-04-11", status:"wip",  resp:"Ambos"},
+  {phase:"GOVERNANÇA",              name:"Definir localização / espaço físico",       start:"2025-03-03", end:"2025-03-28", status:"wip",  resp:"Ambos"},
+  {phase:"GOVERNANÇA",              name:"Estrutura societária",                      start:"2025-03-10", end:"2025-03-21", status:"todo", resp:"Boreal"},
+  {phase:"GOVERNANÇA",              name:"Plano de marketing de lançamento",          start:"2025-03-24", end:"2025-04-04", status:"todo", resp:"Boreal"},
+
+  // PLAY
+  {phase:"PLAY", group:true,        name:"Operação PLAY",                             start:"2025-03-17", end:"2025-06-06", resp:"Boreal"},
+  {phase:"PLAY",                    name:"Definir layout físico da arena",            start:"2025-03-17", end:"2025-03-28", status:"todo", resp:"Boreal"},
+  {phase:"PLAY",                    name:"Especificar equipamentos Skill Lab",        start:"2025-03-24", end:"2025-04-04", status:"todo", resp:"Boreal"},
+  {phase:"PLAY",                    name:"Contratar fornecedor E-sports",             start:"2025-04-07", end:"2025-04-18", status:"todo", resp:"Ambos"},
+  {phase:"PLAY",                    name:"Desenvolver sistema de ranking",            start:"2025-04-14", end:"2025-05-09", status:"todo", resp:"Boreal"},
+  {phase:"PLAY",                    name:"Configurar transmissão streaming",          start:"2025-05-05", end:"2025-05-16", status:"todo", resp:"Boreal"},
+  {phase:"PLAY",                    name:"Criar regulamento das ligas",               start:"2025-05-12", end:"2025-05-23", status:"todo", resp:"Ambos"},
+  {phase:"PLAY",                    name:"Soft launch PLAY (beta)",                   start:"2025-06-06", end:"2025-06-06", status:"todo", resp:"Ambos", milestone:true},
+
+  // ICON
+  {phase:"ICON", group:true,        name:"Modelo ICON",                               start:"2025-04-01", end:"2025-07-05", resp:"Ambos"},
+  {phase:"ICON",                    name:"Elaborar contrato padrão com ídolos",       start:"2025-04-01", end:"2025-04-11", status:"todo", resp:"Boreal"},
+  {phase:"ICON",                    name:"Definir calendário anual (24 eventos)",     start:"2025-04-01", end:"2025-04-04", status:"todo", resp:"Ambos"},
+  {phase:"ICON",                    name:"Criar pacotes VIP / Meet & Greet",          start:"2025-04-07", end:"2025-04-18", status:"todo", resp:"Boreal"},
+  {phase:"ICON",                    name:"Projetar camarim premium",                  start:"2025-04-14", end:"2025-04-25", status:"todo", resp:"Boreal"},
+  {phase:"ICON",                    name:"Sistema de ingresso e pré-venda",           start:"2025-04-21", end:"2025-05-09", status:"todo", resp:"Boreal"},
+  {phase:"ICON",                    name:"Kit operacional Red Carpet",                start:"2025-05-05", end:"2025-05-16", status:"todo", resp:"Ambos"},
+  {phase:"ICON",                    name:"1º evento ICON",                            start:"2025-07-05", end:"2025-07-05", status:"todo", resp:"Ambos", milestone:true},
+
+  // MEDIA
+  {phase:"MEDIA", group:true,       name:"Modelo MEDIA",                              start:"2025-04-21", end:"2025-08-04", resp:"Boreal"},
+  {phase:"MEDIA",                   name:"Criar canal YouTube / Twitch",              start:"2025-04-21", end:"2025-04-25", status:"todo", resp:"Boreal"},
+  {phase:"MEDIA",                   name:"Montar estúdio modular na arena",           start:"2025-05-05", end:"2025-05-23", status:"todo", resp:"Boreal"},
+  {phase:"MEDIA",                   name:"Contratar narrador fixo",                   start:"2025-05-12", end:"2025-05-23", status:"todo", resp:"Boreal"},
+  {phase:"MEDIA",                   name:"Definir estratégia de conteúdo diário",     start:"2025-05-19", end:"2025-05-30", status:"todo", resp:"Boreal"},
+  {phase:"MEDIA",                   name:"Prospectar patrocinadores digitais",        start:"2025-05-26", end:"2025-06-27", status:"todo", resp:"Ambos"},
+  {phase:"MEDIA",                   name:"1ª transmissão ao vivo",                   start:"2025-08-04", end:"2025-08-04", status:"todo", resp:"Boreal", milestone:true},
+
+  // GO LIVE
+  {phase:"GO LIVE", group:true,     name:"Go Live & Lançamento",                      start:"2025-06-09", end:"2025-09-01", resp:"Ambos"},
+  {phase:"GO LIVE",                 name:"Recebimento e setup final",                 start:"2025-06-09", end:"2025-06-20", status:"todo", resp:"Ambos"},
+  {phase:"GO LIVE",                 name:"Campanha de lançamento",                    start:"2025-06-23", end:"2025-07-04", status:"todo", resp:"Ambos"},
+  {phase:"GO LIVE",                 name:"Abertura oficial ao público",               start:"2025-07-07", end:"2025-07-07", status:"todo", resp:"Ambos", milestone:true},
+  {phase:"GO LIVE",                 name:"Execução 1ª temporada",                     start:"2025-07-07", end:"2025-08-29", status:"todo", resp:"Ambos"},
+  {phase:"GO LIVE",                 name:"Report de resultados",                      start:"2025-09-01", end:"2025-09-01", status:"todo", resp:"Ambos", milestone:true},
+];
+
+// ════════════════════════════════════════════════════════════
+// CONFIG DE TIMELINE
+// ════════════════════════════════════════════════════════════
+const WEEK_START  = new Date("2025-03-03");
+const WEEK_END    = new Date("2025-09-07");
+const TOTAL_DAYS  = Math.ceil((WEEK_END - WEEK_START) / 86400000);
+
+const PHASE_COLORS = {
+  "PLAY":       { bar:"#1D9E75", group:"#E8F7F2", text:"#085041" },
+  "ICON":       { bar:"#378ADD", group:"#EBF4FD", text:"#0C447C" },
+  "MEDIA":      { bar:"#7F77DD", group:"#EEEDFE", text:"#3C3489" },
+  "GOVERNANÇA": { bar:"#BA7517", group:"#FDF3E3", text:"#633806" },
+  "GO LIVE":    { bar:"#D85A30", group:"#FDEEE8", text:"#712B13" },
+};
+
+const STATUS_LABEL = { done:"Concluído", wip:"Em andamento", todo:"A fazer", block:"Bloqueado" };
+const STATUS_CYCLE = ["todo","wip","done","block"];
+const collapsedGroups = new Set();
+let editingIdx = null;
+
+// ════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════
+function daysFrom(d) {
+  return Math.max(0, Math.ceil((new Date(d) - WEEK_START) / 86400000));
+}
+function pctLeft(d) {
+  return (daysFrom(d) / TOTAL_DAYS * 100).toFixed(3) + "%";
+}
+function pctWidth(s, e) {
+  const a = Math.max(0, daysFrom(s));
+  const b = Math.min(TOTAL_DAYS, daysFrom(e) + 1);
+  return ((b - a) / TOTAL_DAYS * 100).toFixed(3) + "%";
+}
+function todayPct() {
+  const t = new Date();
+  if (t < WEEK_START || t > WEEK_END) return null;
+  const d = t.toISOString().slice(0,10);
+  return (daysFrom(d) / TOTAL_DAYS * 100).toFixed(2) + "%";
+}
+function fmtDate(d) {
+  if (!d) return "TBD";
+  return new Date(d).toLocaleDateString("pt-BR", { day:"2-digit", month:"short" });
+}
+function saveData() {
+  try { localStorage.setItem("idols_gantt_data", JSON.stringify(DATA)); } catch(e) {}
+}
+function loadData() {
+  try {
+    const s = localStorage.getItem("idols_gantt_data");
+    if (s) DATA = JSON.parse(s);
+  } catch(e) {}
+}
+
+// ════════════════════════════════════════════════════════════
+// BUILD HEADER
+// ════════════════════════════════════════════════════════════
+function buildHeader() {
+  const container = document.getElementById("headerTimeline");
+  container.innerHTML = "";
+
+  const months = [];
+  let cur = new Date(WEEK_START);
+  while (cur <= WEEK_END) {
+    const m = cur.getMonth();
+    const days = [];
+    const c2 = new Date(cur);
+    while (c2.getMonth() === m && c2 <= WEEK_END) { days.push(new Date(c2)); c2.setDate(c2.getDate()+1); }
+    months.push({ label: cur.toLocaleDateString("pt-BR",{month:"short",year:"2-digit"}), pct: (days.length/TOTAL_DAYS*100).toFixed(2)+"%" });
+    cur = new Date(c2);
+  }
+
+  const mRow = document.createElement("div"); mRow.className = "month-labels";
+  months.forEach(m => {
+    const d = document.createElement("div"); d.className = "month-block";
+    d.style.width = m.pct; d.textContent = m.label; mRow.appendChild(d);
+  });
+
+  const weeks = [];
+  let wc = new Date(WEEK_START);
+  while (wc < WEEK_END) {
+    weeks.push({ label: wc.getDate()+"/"+String(wc.getMonth()+1).padStart(2,"0"), pct: (7/TOTAL_DAYS*100).toFixed(2)+"%" });
+    wc.setDate(wc.getDate()+7);
+  }
+  const wRow = document.createElement("div"); wRow.className = "week-labels";
+  weeks.forEach(w => {
+    const d = document.createElement("div"); d.className = "week-cell";
+    d.style.width = w.pct; d.textContent = w.label; wRow.appendChild(d);
+  });
+
+  container.appendChild(mRow);
+  container.appendChild(wRow);
+  return weeks.length;
+}
+
+function makeGridLines(numWeeks) {
+  const g = document.createElement("div"); g.className = "grid-lines";
+  for (let i = 0; i < numWeeks; i++) {
+    const l = document.createElement("div"); l.className = "grid-line";
+    l.style.width = (100/numWeeks).toFixed(3)+"%"; g.appendChild(l);
+  }
+  return g;
+}
+
+// ════════════════════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════════════════════
+let numWeeks = 0;
+
+function render() {
+  numWeeks = buildHeader();
+  const fp = document.getElementById("filterPhase").value;
+  const fs = document.getElementById("filterStatus").value;
+  const fr = document.getElementById("filterResp").value;
+
+  const body = document.getElementById("ganttBody");
+  body.innerHTML = "";
+
+  let total=0, done=0, wip=0, blocked=0;
+  let today = todayPct();
+  let currentPhase = null, groupCollapsed = false;
+
+  DATA.forEach((item, idx) => {
+    if (item.group) {
+      currentPhase = item.phase;
+      groupCollapsed = collapsedGroups.has(item.phase);
+      if (fp !== "all" && fp !== item.phase) return;
+
+      const pc = PHASE_COLORS[item.phase] || { bar:"#888", group:"#f5f5f5", text:"#333" };
+      const row = document.createElement("div");
+      row.className = "group-row";
+      row.style.background = pc.group;
+
+      const info = document.createElement("div");
+      info.className = "col-info";
+      info.style.color = pc.text;
+      info.innerHTML = `<span class="group-arrow" style="transform:${groupCollapsed?"rotate(-90deg)":"rotate(0)"}">▾</span>
+        <span>${item.name}</span>`;
+      info.addEventListener("click", () => {
+        collapsedGroups.has(item.phase) ? collapsedGroups.delete(item.phase) : collapsedGroups.add(item.phase);
+        render();
+      });
+
+      const barArea = document.createElement("div");
+      barArea.className = "group-bar-area";
+      barArea.appendChild(makeGridLines(numWeeks));
+      if (today) {
+        const tl = document.createElement("div"); tl.className = "today-line"; tl.style.left = today; barArea.appendChild(tl);
+      }
+      const pBar = document.createElement("div");
+      pBar.className = "group-phase-bar";
+      pBar.style.cssText = `left:${pctLeft(item.start)};width:${pctWidth(item.start,item.end)};background:${pc.bar}`;
+      barArea.appendChild(pBar);
+
+      row.appendChild(info);
+      row.appendChild(barArea);
+      body.appendChild(row);
+      return;
+    }
+
+    if (fp !== "all" && fp !== item.phase) return;
+    if (groupCollapsed) return;
+
+    const sMatch = fs==="all"||item.status===fs;
+    const rMatch = fr==="all"||item.resp===fr||(fr==="Ambos"&&item.resp==="Ambos");
+    if (!sMatch || !rMatch) return;
+
+    total++;
+    if (item.status==="done") done++;
+    else if (item.status==="wip") wip++;
+    else if (item.status==="block") blocked++;
+
+    const pc = PHASE_COLORS[item.phase] || { bar:"#888" };
+    const badgeClass = item.status==="done"?"b-done":item.status==="wip"?"b-wip":item.status==="block"?"b-block":"b-todo";
+    const barClass   = item.status==="done"?"bar-done":item.status==="wip"?"bar-wip":item.status==="block"?"bar-block":"bar-todo";
+    const barColor   = item.status==="done"?"#639922":item.status==="wip"?"#378ADD":item.status==="block"?"#D85A30":"#C0BFB8";
+
+    const row = document.createElement("div");
+    row.className = "task-row";
+
+    const info = document.createElement("div");
+    info.className = "task-info";
+    info.title = "Clique para editar";
+    info.innerHTML = `<span class="task-name">${item.name}</span>
+      <span class="resp-tag">${item.resp}</span>
+      <span class="badge ${badgeClass}" title="Clique para avançar status">${STATUS_LABEL[item.status]||item.status}</span>`;
+
+    info.querySelector(".badge").addEventListener("click", e => {
+      e.stopPropagation();
+      const cur = item.status || "todo";
+      item.status = STATUS_CYCLE[(STATUS_CYCLE.indexOf(cur)+1) % STATUS_CYCLE.length];
+      saveData(); render();
+    });
+    info.addEventListener("click", () => openModal(idx));
+
+    const barArea = document.createElement("div");
+    barArea.className = "task-bar-area";
+    barArea.appendChild(makeGridLines(numWeeks));
+    if (today) {
+      const tl = document.createElement("div"); tl.className = "today-line"; tl.style.left = today; barArea.appendChild(tl);
+    }
+
+    if (item.milestone) {
+      const d = document.createElement("div");
+      d.className = "milestone-diamond";
+      d.style.cssText = `left:calc(${pctLeft(item.start)} - 6px);background:${barColor}`;
+      attachTooltip(d, item);
+      barArea.appendChild(d);
+    } else {
+      const b = document.createElement("div");
+      b.className = "bar " + barClass;
+      b.style.cssText = `left:${pctLeft(item.start)};width:${pctWidth(item.start,item.end||item.start)}`;
+      attachTooltip(b, item);
+      barArea.appendChild(b);
+    }
+
+    row.appendChild(info);
+    row.appendChild(barArea);
+    body.appendChild(row);
+  });
+
+  if (body.children.length === 0) {
+    const e = document.createElement("div"); e.className = "empty-msg";
+    e.textContent = "Nenhuma tarefa encontrada."; body.appendChild(e);
+  }
+
+  const pDone = total > 0 ? Math.round(done/total*100) : 0;
+  document.getElementById("stats").innerHTML = `
+    <div class="stat"><div class="stat-n">${total}</div><div class="stat-l">tarefas visíveis</div></div>
+    <div class="stat"><div class="stat-n" style="color:#3B6D11">${done}</div><div class="stat-l">concluídas</div></div>
+    <div class="stat"><div class="stat-n" style="color:#185FA5">${wip}</div><div class="stat-l">em andamento</div></div>
+    <div class="stat"><div class="stat-n">${pDone}%</div><div class="stat-l">progresso geral</div></div>`;
+}
+
+// ════════════════════════════════════════════════════════════
+// TOOLTIP
+// ════════════════════════════════════════════════════════════
+const tooltipEl = document.getElementById("tooltip");
+function attachTooltip(el, item) {
+  el.addEventListener("mouseenter", e => {
+    tooltipEl.innerHTML = `<strong>${item.name}</strong>
+      Início: ${fmtDate(item.start)}<br>
+      Fim: ${fmtDate(item.end)}<br>
+      Resp.: ${item.resp}<br>
+      Status: ${STATUS_LABEL[item.status]||"—"}`;
+    tooltipEl.style.display = "block";
+    tooltipEl.style.left = (e.clientX+14)+"px";
+    tooltipEl.style.top  = (e.clientY-8)+"px";
+  });
+  el.addEventListener("mousemove", e => {
+    tooltipEl.style.left = (e.clientX+14)+"px";
+    tooltipEl.style.top  = (e.clientY-8)+"px";
+  });
+  el.addEventListener("mouseleave", () => { tooltipEl.style.display="none"; });
+}
+
+// ════════════════════════════════════════════════════════════
+// MODAL — editar / criar tarefa
+// ════════════════════════════════════════════════════════════
+function openModal(idx) {
+  editingIdx = idx;
+  const item = idx === null ? { phase:"PLAY", name:"", start:"", end:"", status:"todo", resp:"Boreal", milestone:false } : DATA[idx];
+
+  const overlay = document.getElementById("modalOverlay");
+  overlay.style.display = "flex";
+  overlay.innerHTML = `<div class="modal">
+    <h3>${idx===null?"Nova tarefa":"Editar tarefa"}</h3>
+    <label>Nome</label>
+    <input id="m_name" value="${item.name||""}">
+    <label>Fase</label>
+    <select id="m_phase">
+      ${["PLAY","ICON","MEDIA","GOVERNANÇA","GO LIVE"].map(p=>`<option${item.phase===p?" selected":""}>${p}</option>`).join("")}
+    </select>
+    <label>Responsável</label>
+    <select id="m_resp">
+      ${["Boreal","RBS","Ambos"].map(r=>`<option${item.resp===r?" selected":""}>${r}</option>`).join("")}
+    </select>
+    <label>Status</label>
+    <select id="m_status">
+      ${["todo","wip","done","block"].map(s=>`<option value="${s}"${item.status===s?" selected":""}>${STATUS_LABEL[s]}</option>`).join("")}
+    </select>
+    <label>Início</label>
+    <input type="date" id="m_start" value="${item.start||""}">
+    <label>Fim</label>
+    <input type="date" id="m_end" value="${item.end||""}">
+    <label><input type="checkbox" id="m_milestone"${item.milestone?" checked":""}> Marco (milestone)</label>
+    <div class="modal-buttons">
+      ${idx!==null?`<button class="btn btn-danger" id="m_del">Excluir</button>`:""}
+      <button class="btn" id="m_cancel">Cancelar</button>
+      <button class="btn btn-primary" id="m_save">Salvar</button>
+    </div>
+  </div>`;
+
+  overlay.querySelector("#m_cancel").addEventListener("click", closeModal);
+  overlay.addEventListener("click", e => { if(e.target===overlay) closeModal(); });
+
+  overlay.querySelector("#m_save").addEventListener("click", () => {
+    const obj = {
+      phase:     document.getElementById("m_phase").value,
+      name:      document.getElementById("m_name").value.trim(),
+      start:     document.getElementById("m_start").value,
+      end:       document.getElementById("m_end").value,
+      status:    document.getElementById("m_status").value,
+      resp:      document.getElementById("m_resp").value,
+      milestone: document.getElementById("m_milestone").checked,
+    };
+    if (!obj.name || !obj.start) { alert("Preencha pelo menos nome e data de início."); return; }
+    if (idx === null) {
+      const groupIdx = DATA.findIndex(d => d.group && d.phase === obj.phase);
+      DATA.splice(groupIdx+1 > 0 ? groupIdx+1 : DATA.length, 0, obj);
+    } else {
+      DATA[idx] = { ...DATA[idx], ...obj };
+    }
+    saveData(); closeModal(); render();
+  });
+
+  if (idx !== null) {
+    overlay.querySelector("#m_del").addEventListener("click", () => {
+      if (confirm("Excluir esta tarefa?")) { DATA.splice(idx,1); saveData(); closeModal(); render(); }
+    });
+  }
+}
+
+function closeModal() {
+  document.getElementById("modalOverlay").style.display = "none";
+  editingIdx = null;
+}
+
+document.getElementById("addTaskBtn").addEventListener("click", () => openModal(null));
+document.getElementById("filterPhase").addEventListener("change", render);
+document.getElementById("filterStatus").addEventListener("change", render);
+document.getElementById("filterResp").addEventListener("change", render);
+
+// ════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════
+loadData();
+render();
+
+// Atualiza versão com data
+document.getElementById("versionTag").textContent = "Atualizado " + new Date().toLocaleDateString("pt-BR");
+</script>
+</body>
+</html>
